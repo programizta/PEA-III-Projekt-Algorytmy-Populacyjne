@@ -24,8 +24,11 @@ namespace III_Projekt
         int sizeOfPopulation;
         float mutationProbability;
         float crossProbability;
-        int[,] allIndividuals; // macierz, która reprezentuje każdego osobnika (cykl Hamiltona) w populacji
-        int[] populationCosts; // tablica przechowująca wartości cykli Hamiltona dla każdego osobnika w populacji
+
+        /// <summary>
+        /// lista reprezentująca populację (ścieżkę oraz koszt)
+        /// </summary>
+        public List<Individual> Population { get; set; }
 
         public Genetic(int interruptionTime,
             int sizeOfPopulation,
@@ -38,25 +41,19 @@ namespace III_Projekt
             this.mutationProbability = mutationProbability;
             this.crossProbability = crossProbability;
 
-            allIndividuals = new int[sizeOfPopulation, numOfCities];
-            populationCosts = new int[sizeOfPopulation];
-            CreateAndShuffle(allIndividuals);
-
-            for (int i = 0; i < sizeOfPopulation; i++)
-            {
-                populationCosts[i] = GetPathLength(allIndividuals.GetRow(i).ToArray());
-            }
+            Population = new List<Individual>();
         }
 
         /// <summary>
-        /// Jest to metoda generująca permutacje bez powtórzeń losowanych miast
+        /// Jest to metoda generująca permutacje (populację) bez powtórzeń losowanych miast
         /// stosując algorytm przemieszania Fishera-Yatesa
         /// </summary>
         /// <param name="populationPaths"></param>
-        private void CreateAndShuffle(int[,] populationPaths)
+        private void CreatePopulation()
         {
             int numOfIndexes;
             int generatedIndex;
+            int[] auxIndividual = new int[numOfCities];
 
             for (int i = 0; i < sizeOfPopulation; i++)
             {
@@ -66,14 +63,23 @@ namespace III_Projekt
                 {
                     numOfIndexes--;
                     generatedIndex = randomGenerator.Next(numOfIndexes + 1);
-                    int number = populationPaths[i, generatedIndex];
-                    populationPaths[i, generatedIndex] = populationPaths[i, numOfIndexes];
-                    populationPaths[i, numOfIndexes] = number;
+                    int number = auxIndividual[generatedIndex];
+                    auxIndividual[generatedIndex] = auxIndividual[numOfIndexes];
+                    auxIndividual[numOfIndexes] = number;
                 }
+
+                int auxCost = GetPathLength(auxIndividual);
+                Individual individual = new Individual(auxIndividual, auxCost);
+                Population.Add(individual);
             }
         }
 
-        private void Mutate(int[] individual, int numOfIndividualInPopulation)
+        /// <summary>
+        /// Metoda generująca mutację dla wybranego osobnika w populacji
+        /// </summary>
+        /// <param name="individual"></param>
+        /// <param name="numOfIndividualInPopulation"></param>
+        private void Mutate(Individual individual)
         {
             int firstIndex = randomGenerator.Next(0, numOfCities - 1);
             int secondIndex;
@@ -84,11 +90,10 @@ namespace III_Projekt
                 secondIndex = randomGenerator.Next(0, numOfCities - 1);
             } while (firstIndex == secondIndex);
 
-            auxNumber = individual[firstIndex];
-            individual[firstIndex] = individual[secondIndex];
-            individual[secondIndex] = auxNumber;
-
-            // oblicz koszt po permutacji wierzchołków!
+            auxNumber = individual.Path[firstIndex];
+            individual.Path[firstIndex] = individual.Path[secondIndex];
+            individual.Path[secondIndex] = auxNumber;
+            individual.PathCost = GetPathLength(individual.Path);
         }
 
         private int GetPathLength(int[] arrayOfIndexes)
@@ -102,6 +107,97 @@ namespace III_Projekt
             weightOfPath += costMatrix[arrayOfIndexes[numOfCities - 1], arrayOfIndexes[0]];
 
             return weightOfPath;
+        }
+
+        /// <summary>
+        /// Metoda odpowiedzialna za utworzenie potomka według algorytmu krzyżowania PMX
+        /// </summary>
+        /// <param name="firstParent"></param>
+        /// <param name="secondParent"></param>
+        private Individual PMXChildCreation(Individual firstParent, Individual secondParent)
+        {
+            bool[] visitedCities = new bool[numOfCities];
+            int[] pathForChildren = new int[numOfCities];
+
+            for (int i = 0; i < numOfCities; i++)
+            {
+                visitedCities[i] = false;
+            }
+
+            int parentChoice = randomGenerator.Next();
+
+            int firstIndexOfCutPoint;
+            int secondIndexOfCutPoint;
+            int costOfChildsPath;
+
+            do
+            {
+                firstIndexOfCutPoint = randomGenerator.Next(0, numOfCities - 1);
+            } while (numOfCities - firstIndexOfCutPoint <= 2); // ?
+
+            secondIndexOfCutPoint = randomGenerator.Next(firstIndexOfCutPoint, numOfCities - 1);
+
+            if (parentChoice % 2 == 0)
+            {
+                for (int i = firstIndexOfCutPoint; i < secondIndexOfCutPoint; i++)
+                {
+                    visitedCities[i] = true;
+                    pathForChildren[i] = firstParent.Path[i];
+                }
+
+                for (int i = 0; i < numOfCities; i++)
+                {
+                    if (!visitedCities[i])
+                    {
+                        visitedCities[i] = true;
+                        pathForChildren[i] = secondParent.Path[i];
+                    }
+                }
+
+                costOfChildsPath = GetPathLength(pathForChildren);
+                return new Individual(pathForChildren, costOfChildsPath);
+            }
+
+            for (int i = firstIndexOfCutPoint; i < secondIndexOfCutPoint; i++)
+            {
+                visitedCities[i] = true;
+                pathForChildren[i] = secondParent.Path[i];
+            }
+
+            for (int i = 0; i < numOfCities; i++)
+            {
+                if (!visitedCities[i])
+                {
+                    visitedCities[i] = true;
+                    pathForChildren[i] = firstParent.Path[i];
+                }
+            }
+
+            costOfChildsPath = GetPathLength(pathForChildren);
+            return new Individual(pathForChildren, costOfChildsPath);
+        }
+
+        public void StartGeneticAlgorithm(/*populacja, czas stopu, liczba pokoleń*/)
+        {
+            //utwórz populację
+            //wystartuj czasomierz
+            /*while(czasomierz <= czas stopu lub pokolenie <= liczba pokoleń)
+             {
+                for (kilka losowych iteracji)
+                {
+                    krzyżowanie dwóch losowych osobników rodzicielskich (OX lub PMX)
+                    utworzenie nowego osobnika po krzyżowaniu
+                }
+                mutacja losowego osobnika z odpowiednim prawdopodobieństwem
+                sortowanie rosnące osobników względem kosztów cykli hamiltona
+                usuwamy losową liczbę najgorszych osobników
+
+                
+                inkrementacja numeru pokolenia
+             }
+
+             */
+
         }
     }
 }
