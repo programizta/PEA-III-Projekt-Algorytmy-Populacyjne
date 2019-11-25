@@ -20,6 +20,14 @@ namespace III_Projekt
             CopyFromTo(path, Path);
         }
 
+        public Individual(Individual individual)
+        {
+            Path = new int[individual.Path.Length];
+            isParent = individual.isParent;
+            PathCost = individual.PathCost;
+            CopyFromTo(individual.Path, Path);
+        }
+
         public Individual() { }
 
         public void SetAsParent()
