@@ -28,8 +28,6 @@ namespace III_Projekt
             CopyFromTo(individual.Path, Path);
         }
 
-        public Individual() { }
-
         public void SetAsParent()
         {
             isParent = true;

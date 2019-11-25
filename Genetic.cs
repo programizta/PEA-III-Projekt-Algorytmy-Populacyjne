@@ -11,7 +11,6 @@ namespace III_Projekt
     /// </summary>
     class ListComparer : IComparer<Individual>
     {
-
         public int Compare(Individual x, Individual y)
         {
             if (x.PathCost == 0 || y.PathCost == 0)
@@ -25,11 +24,10 @@ namespace III_Projekt
 
     class Genetic : Graph
     {
-        ListComparer gg;
+        readonly ListComparer gg;
         public Stack FinalRoute { get; set; }
         Random randomGenerator;
-        readonly double interruptionTime;
-        int sizeOfPopulation;
+        readonly int sizeOfPopulation;
         float mutationProbability;
         float crossProbability;
         int numberOfGenerations;
@@ -39,12 +37,11 @@ namespace III_Projekt
         /// </summary>
         public List<Individual> Population { get; set; }
 
-        public Genetic(double interruptionTime, int sizeOfPopulation, string filename, int choice) : base(filename, choice)
+        public Genetic(int sizeOfPopulation, string filename, int choice) : base(filename, choice)
         {
             gg = new ListComparer();
             FinalRoute = new Stack();
             randomGenerator = new Random();
-            this.interruptionTime = interruptionTime;
             this.sizeOfPopulation = sizeOfPopulation;
             Population = new List<Individual>();
         }
@@ -60,6 +57,7 @@ namespace III_Projekt
             int generatedIndex;
             int[] auxIndividual = new int[numOfCities];
 
+            // wygenerowanie pierwszego cyklu
             for (int i = 0; i < numOfCities; i++)
             {
                 auxIndividual[i] = i;
@@ -69,6 +67,7 @@ namespace III_Projekt
             {
                 numOfIndexes = numOfCities;
 
+                // przemieszanie Fishera-Yatesa
                 while (numOfIndexes > 1)
                 {
                     numOfIndexes--;
@@ -84,6 +83,7 @@ namespace III_Projekt
                 Population.Add(individual);
             }
 
+            // wstępna selekcja populacji
             PopulationSelection(Population);
         }
 
@@ -151,7 +151,7 @@ namespace III_Projekt
 
             MarkAllCitiesAsUnvisited(visitedCities);
 
-            int parentChoice = randomGenerator.Next();
+            int parentChoice = randomGenerator.Next(0, 2);
 
             int firstIndexOfCutPoint;
             int secondIndexOfCutPoint;
@@ -166,19 +166,45 @@ namespace III_Projekt
             int firstIterator = firstIndexOfCutPoint;
             int secondIterator = secondIndexOfCutPoint - firstIndexOfCutPoint;
 
+            // pierwszy fragment ścieżki potomka jest uzyskiwany od pierwszego rodzica
+            if (parentChoice == 1)
+            {
+                for (int i = 0; i < secondIndexOfCutPoint - firstIndexOfCutPoint; i++)
+                {
+                    visitedCities[firstParent.Path[firstIterator]] = true;
+                    pathForChildren[i] = firstParent.Path[firstIterator];
+                    firstIterator++;
+                }
+
+                for (int i = 0; i < numOfCities; i++)
+                {
+                    if (!visitedCities[secondParent.Path[i]])
+                    {
+                        visitedCities[secondParent.Path[i]] = true;
+                        pathForChildren[secondIterator] = secondParent.Path[i];
+                        secondIterator++;
+                    }
+                }
+
+                costOfChildsPath = GetPathLength(pathForChildren);
+                return new Individual(pathForChildren, costOfChildsPath);
+            }
+
+            // w przeciwnym wypadku pierwszy fragment potomka jest uzyskiwany
+            // od drugiego rodzica
             for (int i = 0; i < secondIndexOfCutPoint - firstIndexOfCutPoint; i++)
             {
-                visitedCities[firstParent.Path[firstIterator]] = true;
-                pathForChildren[i] = firstParent.Path[firstIterator];
+                visitedCities[secondParent.Path[firstIterator]] = true;
+                pathForChildren[i] = secondParent.Path[firstIterator];
                 firstIterator++;
             }
 
             for (int i = 0; i < numOfCities; i++)
             {
-                if (!visitedCities[secondParent.Path[i]])
+                if (!visitedCities[firstParent.Path[i]])
                 {
-                    visitedCities[secondParent.Path[i]] = true;
-                    pathForChildren[secondIterator] = secondParent.Path[i];
+                    visitedCities[firstParent.Path[i]] = true;
+                    pathForChildren[secondIterator] = firstParent.Path[i];
                     secondIterator++;
                 }
             }
@@ -195,7 +221,7 @@ namespace III_Projekt
         {
             Population.Sort(gg);
 
-            while (Population.Count() > sizeOfPopulation)
+            while (Population.Count() > (int)(sizeOfPopulation * 0.95))
             {
                 Population.RemoveAt(Population.Count() - 1);
             }
@@ -236,8 +262,8 @@ namespace III_Projekt
                         firstParent = new Individual(Population.ElementAt(randomGenerator.Next(0, populationCount - 1)));
                         secondParent = new Individual(Population.ElementAt(randomGenerator.Next(0, populationCount - 1)));
                     } while (firstParent.Equals(secondParent) && firstParent.IsItParent() && secondParent.IsItParent());
-                    // sprawdzamy czy dwa wylosowane osobniki nie są takie same oraz sprawdzamy
-                    // czy są rodzicami
+                    // sprawdzamy czy dwa wylosowane osobniki nie są takie same
+                    // oraz sprawdzamy czy są rodzicami
                     crossProbability = (float)randomGenerator.NextDouble();
 
                     if (crossProbability >= 0.6)

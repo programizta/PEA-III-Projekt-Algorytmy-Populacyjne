@@ -14,7 +14,6 @@ namespace III_Projekt
             string filename;
             int numOfGenerations = 0;
             int sizeOfPopulation = 0;
-            double interruptionTime = 0;
             int numOfChoice;
 
             while (true)
@@ -70,8 +69,6 @@ namespace III_Projekt
                     case 3:
                         {
                             Console.Clear();
-                            Console.Write("Podaj czas działania algorytmu: ");
-                            interruptionTime = double.Parse(Console.ReadLine());
                             Console.Write("Wprowadź początkową liczebność populacji: ");
                             sizeOfPopulation = int.Parse(Console.ReadLine());
                             Console.Write("Podaj liczbę pokoleń, która ma się urodzić: ");
@@ -83,7 +80,7 @@ namespace III_Projekt
                     case 4:
                         {
                             Console.Clear();
-                            Genetic ga = new Genetic(interruptionTime, sizeOfPopulation, g.Filename, choice);
+                            Genetic ga = new Genetic(sizeOfPopulation, g.Filename, choice);
                             ga.StartGeneticAlgorithm(numOfGenerations);
                             Console.WriteLine("Najlepszy, oszacowany cykl ma wagę: " + ga.BestCycleCost);
                             Console.WriteLine("\nOszacowana ścieżka:");
