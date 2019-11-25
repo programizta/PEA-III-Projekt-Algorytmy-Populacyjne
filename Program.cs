@@ -12,9 +12,9 @@ namespace III_Projekt
         {
             Graph g = new Graph();
             string filename;
-            double tCoefficient = 0;
-            double minTemperature = 0;
-            double maxTemperature = 0;
+            int numOfGenerations = 0;
+            int sizeOfPopulation = 0;
+            double interruptionTime = 0;
             int numOfChoice;
 
             while (true)
@@ -36,8 +36,8 @@ namespace III_Projekt
                 Console.WriteLine("Możliwości do wyboru: ");
                 Console.WriteLine("1. Wczytaj macierz grafu");
                 Console.WriteLine("2. Wyświetl macierz kosztów");
-                Console.WriteLine("3. Podaj parametry do symulowanego wyżarzania");
-                Console.WriteLine("4. Rozwiąż problem komiwojażera za pomocą metody symulowanego wyżarzania");
+                Console.WriteLine("3. Podaj parametry dla algorytmu genetycznego");
+                Console.WriteLine("4. Rozwiąż problem komiwojażera algorytmem genetycznym");
                 Console.WriteLine("5. Zakończ działanie programu\n");
                 Console.Write("Którą opcję chcesz wybrać? Podaj numer: ");
                 numOfChoice = int.Parse(Console.ReadLine());
@@ -70,12 +70,12 @@ namespace III_Projekt
                     case 3:
                         {
                             Console.Clear();
-                            Console.Write("Podaj współczynnik wyżarzania z zakresu [0; 1): ");
-                            tCoefficient = double.Parse(Console.ReadLine());
-                            Console.Write("Wprowadź początkową temperaturę wyżarzania (większą od 0): ");
-                            maxTemperature = double.Parse(Console.ReadLine());
-                            Console.Write("Wprowadź minimalną temperaturę wyżarzania (większą od 0): ");
-                            minTemperature = double.Parse(Console.ReadLine());
+                            Console.Write("Podaj czas działania algorytmu: ");
+                            interruptionTime = double.Parse(Console.ReadLine());
+                            Console.Write("Wprowadź początkową liczebność populacji: ");
+                            sizeOfPopulation = int.Parse(Console.ReadLine());
+                            Console.Write("Podaj liczbę pokoleń, która ma się urodzić: ");
+                            numOfGenerations = int.Parse(Console.ReadLine());
                             Console.Write("\nAby kontynuować kliknij [ENTER]");
                             Console.ReadKey();
                             break;
@@ -83,13 +83,11 @@ namespace III_Projekt
                     case 4:
                         {
                             Console.Clear();
-                            SimulatedAnnealing sa = new SimulatedAnnealing(g.Filename, choice);
-                            sa.StartSA(minTemperature, maxTemperature, tCoefficient);
-                            Console.WriteLine("Średni czas w ms: " + sa.Time);
-                            //Console.WriteLine("Średnia waga cyklu: " + sa.TotalCost);
-                            Console.WriteLine("Najlepszy, oszacowany cykl ma wagę: " + sa.BestCycleCost);
+                            Genetic ga = new Genetic(interruptionTime, sizeOfPopulation, g.Filename, choice);
+                            ga.StartGeneticAlgorithm(numOfGenerations);
+                            Console.WriteLine("Najlepszy, oszacowany cykl ma wagę: " + ga.BestCycleCost);
                             Console.WriteLine("\nOszacowana ścieżka:");
-                            sa.Route.Display();
+                            ga.FinalRoute.Display();
                             Console.WriteLine("\nKoniec. Aby wrócić do głównego menu, kliknij dowolny klawisz...");
                             Console.ReadKey();
                             break;
